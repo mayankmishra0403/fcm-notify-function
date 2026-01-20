@@ -65,6 +65,85 @@ Or use the patterns:
 4. Navigate to **Cloud Messaging** tab
 5. Copy **Server Key** (Legacy API)
 
+## 📱 Flutter App Setup
+
+### Step 1: Add Dependencies
+
+Add these packages to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  firebase_messaging: ^14.7.9
+  firebase_core: ^2.24.2
+  permission_handler: ^11.1.0
+```
+
+Run: `flutter pub get`
+
+### Step 2: Android Configuration
+
+**android/app/src/main/AndroidManifest.xml** mein add karein:
+
+```xml
+<manifest>
+  <!-- Notification permission for Android 13+ -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  
+  <application>
+    <!-- FCM default notification channel -->
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_channel_id"
+      android:value="high_importance_channel" />
+  </application>
+</manifest>
+```
+
+**android/app/build.gradle** mein minimum SDK check karein:
+
+```gradle
+android {
+    defaultConfig {
+        minSdkVersion 21  // At least 21
+        targetSdkVersion 33  // Or latest
+    }
+}
+```
+
+### Step 3: iOS Configuration
+
+**ios/Runner/Info.plist** mein add karein:
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+    <string>remote-notification</string>
+</array>
+```
+
+### Step 4: Use Notification Service
+
+1. Copy `flutter_notification_setup.dart` file apne Flutter project mein
+2. `main.dart` mein initialize karein:
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await NotificationService.initialize();
+  runApp(MyApp());
+}
+```
+
+3. Login ya home screen par permission request dialog show karein (example code file mein hai)
+
+### Step 5: Test Notification
+
+1. App install karein device par
+2. Notification permission allow karein
+3. App automatically `admins` topic par subscribe ho jayega
+4. Website se query fill karein
+5. Notification aana chahiye!
+
 ## 📱 Supported Collections
 
 | Collection | Create Icon | Update Icon |
@@ -124,6 +203,7 @@ View execution logs in Appwrite Console → Functions → FCM Notify → Executi
    - Ensure Flutter app subscribes to topic: `/topics/admins`
    - In Flutter: `FirebaseMessaging.instance.subscribeToTopic('admins')`
    - Check subscription in Firebase Console → Cloud Messaging → Topics
+   - **Important:** Notification permission allow karna zaroori hai, warna topic subscribe nahi hoga properly
 
 3. **Check Function Logs:**
    - View execution logs in Appwrite Console
@@ -155,6 +235,25 @@ View execution logs in Appwrite Console → Functions → FCM Notify → Executi
 - Verify FCM Server Key is correct
 - Check Firebase project is active
 - Ensure topic exists and devices are subscribed
+
+### Flutter App Issues:
+
+**Notification permission not showing:**
+- Check `permission_handler` package properly installed hai
+- Android 13+ ke liye `POST_NOTIFICATIONS` permission AndroidManifest mein add karein
+- iOS ke liye `Info.plist` properly configured hai
+
+**Notifications not received:**
+- Verify notification permission granted hai (Settings mein check karein)
+- Check FCM token properly generate ho raha hai
+- Ensure `subscribeToAdminTopic()` successfully call hua
+- Check app background/foreground state - foreground mein notifications handle karein
+
+**Topic subscription failed:**
+- Notification permission allow karein pehle
+- Internet connection check karein
+- Firebase project properly configured hai
+- Check logs: `flutter run` se console logs dekhein
 
 ## 📄 License
 
