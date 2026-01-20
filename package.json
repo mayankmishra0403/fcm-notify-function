@@ -4,6 +4,7 @@
   "description": "FCM push notification sender for admin on database events",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'Build completed'",
     "start": "node index.js"
   },
   "keywords": ["fcm", "push-notifications", "appwrite", "hotel-management"],
