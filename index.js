@@ -196,6 +196,19 @@ function buildNotification(collection, document, event) {
 }
 
 /**
+ * Extract collection name from Appwrite event string
+ * Format: databases.{dbId}.collections.{collectionId}.documents.{docId}.create
+ */
+function extractCollectionFromEvent(eventString) {
+  const parts = eventString.split('.');
+  const collectionIndex = parts.indexOf('collections');
+  if (collectionIndex !== -1 && collectionIndex + 1 < parts.length) {
+    return parts[collectionIndex + 1];
+  }
+  return null;
+}
+
+/**
  * Main function handler
  */
 module.exports = async (req, res) => {
@@ -208,31 +221,46 @@ module.exports = async (req, res) => {
     }
 
     // Parse the event payload from Appwrite
-    const payload = req.body || {};
-    console.log('📥 Event received:', JSON.stringify(payload, null, 2));
+    // Appwrite sends: { event: "...", payload: {...} }
+    const eventData = req.body || {};
+    console.log('📥 Full request body:', JSON.stringify(eventData, null, 2));
+    
+    // Appwrite event format: databases.{dbId}.collections.{collectionId}.documents.{docId}.create
+    const eventString = eventData.event || '';
+    const document = eventData.payload || eventData.document || {};
+    
+    console.log('📥 Event string:', eventString);
+    console.log('📥 Document:', JSON.stringify(document, null, 2));
 
-    const event = payload.event || '';
-    const collection = payload.collection || '';
-    const document = payload.document || {};
+    // Extract collection name from event string
+    const collection = extractCollectionFromEvent(eventString);
+    
+    if (!collection) {
+      console.error('❌ Could not extract collection from event:', eventString);
+      return res.json({ error: 'Invalid event format' }, 400);
+    }
 
     // Determine event type (create or update)
-    const eventType = event.includes('create') ? 'create' : 'update';
+    const eventType = eventString.includes('.create') ? 'create' : 
+                     eventString.includes('.update') ? 'update' : null;
 
-    // Skip if not a create or update event
-    if (!['create', 'update'].includes(eventType)) {
-      console.log('⏭️  Skipping non-create/update event:', event);
+    if (!eventType) {
+      console.log('⏭️  Skipping non-create/update event:', eventString);
       return res.json({ message: 'Event type not supported' }, 200);
     }
+
+    console.log('📋 Collection:', collection);
+    console.log('📋 Event Type:', eventType);
 
     // Build notification
     const notification = buildNotification(collection, document, eventType);
     console.log('📤 Sending notification:', notification);
 
-    // Prepare deep-link data
+    // Prepare deep-link data (FCM requires all data values to be strings)
     const deepLinkData = {
-      collection: collection,
-      documentId: document['$id'] || document.id || '',
-      event: eventType,
+      collection: String(collection),
+      documentId: String(document['$id'] || document.id || ''),
+      event: String(eventType),
       timestamp: new Date().toISOString(),
     };
 
@@ -249,10 +277,13 @@ module.exports = async (req, res) => {
       success: true,
       notification: notification,
       fcmResponse: result,
+      collection: collection,
+      eventType: eventType,
     }, 200);
 
   } catch (error) {
     console.error('❌ Error sending notification:', error);
+    console.error('❌ Error stack:', error.stack);
     return res.json({
       error: error.message,
       stack: error.stack,
