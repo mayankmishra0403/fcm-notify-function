@@ -1,0 +1,13 @@
+{
+  "name": "fcm-notify-function",
+  "version": "1.0.0",
+  "description": "FCM push notification sender for admin on database events",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["fcm", "push-notifications", "appwrite", "hotel-management"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {}
+}
