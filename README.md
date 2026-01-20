@@ -95,15 +95,66 @@ View execution logs in Appwrite Console → Functions → FCM Notify → Executi
 
 ## 🛠️ Troubleshooting
 
-**No notifications?**
-- Verify FCM_SERVER_KEY is set correctly
-- Check device is subscribed to `/topics/admins`
-- View function execution logs for errors
+### Function Not Executing?
 
-**Function fails?**
+1. **Check Function Triggers:**
+   - Go to Appwrite Console → Functions → Your Function → Settings → Events
+   - Ensure triggers are added:
+     - `databases.*.collections.*.documents.*.create`
+     - `databases.*.collections.*.documents.*.update`
+   - Or specific database: `databases.{YOUR_DB_ID}.collections.*.documents.*.create`
+
+2. **Check Function Logs:**
+   - Go to Appwrite Console → Functions → Your Function → Executions
+   - Check if function is being triggered
+   - Look for error messages in logs
+
+3. **Verify Environment Variable:**
+   - Go to Function Settings → Variables
+   - Ensure `FCM_SERVER_KEY` is set correctly
+   - Check it's marked as "Secret" if needed
+
+### No Notifications Received?
+
+1. **FCM Server Key:**
+   - Verify `FCM_SERVER_KEY` is correct from Firebase Console
+   - Go to Firebase Console → Project Settings → Cloud Messaging → Server Key
+
+2. **Device Subscription:**
+   - Ensure Flutter app subscribes to topic: `/topics/admins`
+   - In Flutter: `FirebaseMessaging.instance.subscribeToTopic('admins')`
+   - Check subscription in Firebase Console → Cloud Messaging → Topics
+
+3. **Check Function Logs:**
+   - View execution logs in Appwrite Console
+   - Look for "✅ Notification sent successfully" message
+   - Check for FCM API errors
+
+4. **Test FCM Directly:**
+   - Use Firebase Console → Cloud Messaging → Send test message
+   - Send to topic: `admins`
+   - If this works, issue is in function. If not, check FCM setup.
+
+### Function Fails?
+
 - Ensure entrypoint is set to `index.js`
-- Check runtime is Node.js 18.0
-- Verify triggers are configured
+- Check runtime is Node.js 18.0 (or latest)
+- Verify triggers are configured correctly
+- Check build script exists in `package.json`
+
+### Common Issues:
+
+**"FCM_SERVER_KEY not configured"**
+- Add environment variable in Appwrite Function settings
+
+**"Could not extract collection from event"**
+- Check event format in logs
+- Ensure triggers are properly configured
+
+**"FCM request failed"**
+- Verify FCM Server Key is correct
+- Check Firebase project is active
+- Ensure topic exists and devices are subscribed
 
 ## 📄 License
 
